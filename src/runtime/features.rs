@@ -1,4 +1,8 @@
+use alloc::{string::String, vec::Vec};
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
 
 use crate::{
     error::OciSpecError,
@@ -392,9 +396,9 @@ pub struct IDMap {
     enabled: Option<bool>,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
-    use std::ops::Deref;
+    use core::ops::Deref;
 
     use super::*;
 

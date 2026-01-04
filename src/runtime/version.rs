@@ -1,3 +1,4 @@
+use alloc::string::String;
 use const_format::formatcp;
 
 /// API incompatible changes.
@@ -20,10 +21,10 @@ pub const VERSION: &str = formatcp!("{VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PA
 /// Use [`VERSION`] instead.
 #[deprecated]
 pub fn version() -> String {
-    VERSION.to_owned()
+    String::from(VERSION)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
 

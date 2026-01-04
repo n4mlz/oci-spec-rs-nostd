@@ -2,12 +2,14 @@ use crate::{
     error::OciSpecError,
     runtime::{Capabilities, Capability},
 };
+use alloc::{string::String, string::ToString, vec::Vec};
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, MutGetters, Setters};
-use regex::Regex;
 use serde::{de, Deserialize, Deserializer, Serialize};
+#[cfg(feature = "std")]
 use std::path::PathBuf;
-use std::sync::OnceLock;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use strum_macros::{Display as StrumDisplay, EnumString};
 
 #[derive(
@@ -609,23 +611,39 @@ where
     Ok(value)
 }
 
-fn exec_cpu_affinity_regex() -> &'static Regex {
-    static EXEC_CPU_AFFINITY_REGEX: OnceLock<Regex> = OnceLock::new();
-    EXEC_CPU_AFFINITY_REGEX.get_or_init(|| {
-        Regex::new(r"^(\d+(-\d+)?)(,\d+(-\d+)?)*$")
-            .expect("Failed to create regex for execCPUAffinity")
-    })
-}
-
 fn validate_cpu_affinity(s: &str) -> Result<(), String> {
-    if !exec_cpu_affinity_regex().is_match(s) {
+    if s.is_empty() {
         return Err(format!("Invalid execCPUAffinity format: {s}"));
+    }
+
+    for segment in s.split(',') {
+        if segment.is_empty() {
+            return Err(format!("Invalid execCPUAffinity format: {s}"));
+        }
+
+        let mut parts = segment.split('-');
+        let start = parts.next().unwrap_or_default();
+        let end = parts.next();
+
+        if parts.next().is_some() {
+            return Err(format!("Invalid execCPUAffinity format: {s}"));
+        }
+
+        let start_ok = !start.is_empty() && start.chars().all(|c| c.is_ascii_digit());
+        let end_ok = match end {
+            Some(value) => !value.is_empty() && value.chars().all(|c| c.is_ascii_digit()),
+            None => true,
+        };
+
+        if !(start_ok && end_ok) {
+            return Err(format!("Invalid execCPUAffinity format: {s}"));
+        }
     }
 
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
     use serde_json::json;

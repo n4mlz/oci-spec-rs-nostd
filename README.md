@@ -27,6 +27,28 @@ oci-spec = "0.8.4"
 If you want to propose or cut a new release, then please follow our 
 [release process documentation](./release.md).
 
+## no_std runtime usage
+The `runtime` module supports `no_std` targets with `alloc`, using string-based JSON helpers.
+
+```toml
+[dependencies]
+oci-spec = { git = "https://github.com/n4mlz/oci-spec-rs-nostd", default-features = false, features = ["runtime"] }
+```
+
+```rust
+use oci_spec::runtime::Spec;
+
+let spec_json = r#"{"ociVersion":"1.0.2"}"#;
+let spec = Spec::from_str(spec_json).unwrap();
+let serialized = spec.to_string().unwrap();
+```
+
+Limitations in `no_std` builds:
+- File I/O helpers are not available (`Spec::load`, `Spec::save`, `State::load`, `State::save`).
+- Path canonicalization (`Spec::canonicalize_rootfs`) is `std`-only.
+- `distribution` and `image` features require `std` and are unavailable.
+- Path fields are `String`-backed in `no_std` builds (no filesystem path operations).
+
 ## Image Format Spec Examples
 - Load image manifest from filesystem
 ```rust no_run

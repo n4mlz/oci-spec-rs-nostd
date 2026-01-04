@@ -1,4 +1,5 @@
 use crate::error::OciSpecError;
+use alloc::{string::String, vec::Vec};
 use derive_builder::Builder;
 use getset::{Getters, Setters};
 use serde::{Deserialize, Serialize};

@@ -1,9 +1,13 @@
 use crate::error::OciSpecError;
-use crate::runtime::LinuxIdMapping;
+use crate::runtime::{path_to_string_lossy, LinuxIdMapping};
+use alloc::{string::String, string::ToString, vec::Vec};
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
 use std::path::PathBuf;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 
 #[derive(
     Builder, Clone, CopyGetters, Debug, Deserialize, Eq, Getters, Setters, PartialEq, Serialize,
@@ -242,7 +246,7 @@ pub fn get_rootless_mounts() -> Vec<Mount> {
     let mut mounts = get_default_mounts();
     mounts
         .iter_mut()
-        .find(|m| m.destination.to_string_lossy() == "/dev/pts")
+        .find(|m| path_to_string_lossy(&m.destination).as_ref() == "/dev/pts")
         .map(|m| {
             if let Some(opts) = &mut m.options {
                 opts.retain(|o| o != "gid=5")
@@ -251,7 +255,7 @@ pub fn get_rootless_mounts() -> Vec<Mount> {
         });
     mounts
         .iter_mut()
-        .find(|m| m.destination.to_string_lossy() == "/sys")
+        .find(|m| path_to_string_lossy(&m.destination).as_ref() == "/sys")
         .map(|m| {
             m.typ = Some("none".to_string());
             m.source = Some("/sys".into());

@@ -2,17 +2,26 @@
 //!
 //! [`Spec`] represents the root object from the specification.
 
+use alloc::{borrow::Cow, string::String, vec::Vec};
 use derive_builder::Builder;
 use getset::{Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
 use std::{
-    collections::HashMap,
     fs,
     io::{BufReader, BufWriter, Write},
     path::{Path, PathBuf},
 };
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
 
-use crate::error::{oci_error, OciSpecError, Result};
+use crate::error::{OciSpecError, Result};
+#[cfg(feature = "std")]
+use crate::error::oci_error;
 
 mod capability;
 mod features;
@@ -22,6 +31,7 @@ mod miscellaneous;
 mod process;
 mod solaris;
 mod state;
+#[cfg(all(test, feature = "std"))]
 mod test;
 mod version;
 mod vm;
@@ -41,6 +51,16 @@ pub use version::*;
 pub use vm::*;
 pub use windows::*;
 pub use zos::*;
+
+#[cfg(feature = "std")]
+pub(crate) fn path_to_string_lossy(path: &PathBuf) -> Cow<'_, str> {
+    path.to_string_lossy()
+}
+
+#[cfg(not(feature = "std"))]
+pub(crate) fn path_to_string_lossy(path: &PathBuf) -> Cow<'_, str> {
+    Cow::Borrowed(path.as_str())
+}
 
 /// `config.json` file root object.
 #[derive(
@@ -178,7 +198,7 @@ impl Default for Spec {
             version: String::from("1.0.2-dev"),
             process: Some(Default::default()),
             root: Some(Default::default()),
-            hostname: "youki".to_string().into(),
+            hostname: String::from("youki").into(),
             domainname: None,
             mounts: get_default_mounts().into(),
             // Defaults to empty metadata
@@ -196,6 +216,35 @@ impl Default for Spec {
 }
 
 impl Spec {
+    /// Load a new `Spec` from the provided JSON string.
+    /// # Errors
+    /// This function will return an [OciSpecError::SerDe] if the spec is invalid.
+    /// # Example
+    /// ```
+    /// use oci_spec::runtime::Spec;
+    ///
+    /// let spec_json = r#"{"ociVersion":"1.0.2"}"#;
+    /// let spec = Spec::from_str(spec_json).unwrap();
+    /// ```
+    pub fn from_str(value: &str) -> Result<Self> {
+        let spec = serde_json::from_str(value)?;
+        Ok(spec)
+    }
+
+    /// Serialize a `Spec` into a compact JSON string.
+    /// # Errors
+    /// This function will return an [OciSpecError::SerDe] if the spec cannot be serialized.
+    pub fn to_string(&self) -> Result<String> {
+        Ok(serde_json::to_string(self)?)
+    }
+
+    /// Serialize a `Spec` into a pretty JSON string.
+    /// # Errors
+    /// This function will return an [OciSpecError::SerDe] if the spec cannot be serialized.
+    pub fn to_string_pretty(&self) -> Result<String> {
+        Ok(serde_json::to_string_pretty(self)?)
+    }
+
     /// Load a new `Spec` from the provided JSON file `path`.
     /// # Errors
     /// This function will return an [OciSpecError::Io] if the spec does not exist or an
@@ -206,6 +255,7 @@ impl Spec {
     ///
     /// let spec = Spec::load("config.json").unwrap();
     /// ```
+    #[cfg(feature = "std")]
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         let file = fs::File::open(path)?;
@@ -225,6 +275,7 @@ impl Spec {
     /// let mut spec = Spec::load("config.json").unwrap();
     /// spec.save("my_config.json").unwrap();
     /// ```
+    #[cfg(feature = "std")]
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let path = path.as_ref();
         let file = fs::File::create(path)?;
@@ -235,6 +286,7 @@ impl Spec {
     }
 
     /// Canonicalize the `root.path` of the `Spec` for the provided `bundle`.
+    #[cfg(feature = "std")]
     pub fn canonicalize_rootfs<P: AsRef<Path>>(&mut self, bundle: P) -> Result<()> {
         let root = self
             .root
@@ -266,6 +318,7 @@ impl Spec {
         }
     }
 
+    #[cfg(feature = "std")]
     fn canonicalize_path<B, P>(bundle: B, path: P) -> Result<PathBuf>
     where
         B: AsRef<Path>,
@@ -280,7 +333,7 @@ impl Spec {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
 
@@ -419,7 +472,7 @@ mod tests {
         let mounts = spec_rootless.mounts.expect("mounts should not be empty");
         assert!(
             !mounts.iter().any(|m| {
-                if m.destination().to_string_lossy() == "/dev/pts" {
+                if path_to_string_lossy(m.destination()).as_ref() == "/dev/pts" {
                     return m
                         .options()
                         .clone()
@@ -434,19 +487,19 @@ mod tests {
         );
         let sys_mount = mounts
             .iter()
-            .find(|m| m.destination().to_string_lossy() == "/sys")
+            .find(|m| path_to_string_lossy(m.destination()).as_ref() == "/sys")
             .expect("sys mount should be present");
         assert_eq!(
             sys_mount.typ(),
             &Some("none".to_string()),
             "type should be changed in sys mount"
         );
+        let sys_source = sys_mount
+            .source()
+            .as_ref()
+            .expect("source should not be empty in sys mount");
         assert_eq!(
-            sys_mount
-                .source()
-                .clone()
-                .expect("source should not be empty in sys mount")
-                .to_string_lossy(),
+            path_to_string_lossy(sys_source).as_ref(),
             "/sys",
             "source should be changed in sys mount"
         );

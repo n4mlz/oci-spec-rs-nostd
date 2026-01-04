@@ -1,15 +1,21 @@
+use alloc::string::String;
 use serde::{
     de::{Deserializer, Error},
     Deserialize, Serialize,
 };
+#[cfg(feature = "std")]
 use std::collections::HashSet;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeSet as HashSet;
 
 use strum_macros::{Display, EnumString};
 
 /// Capabilities is a unique set of Capability values.
 pub type Capabilities = HashSet<Capability>;
 
-#[derive(Clone, Copy, Debug, EnumString, Eq, Display, Hash, PartialEq, Serialize)]
+#[derive(
+    Clone, Copy, Debug, EnumString, Eq, Display, Hash, Ord, PartialEq, PartialOrd, Serialize,
+)]
 /// All available capabilities.
 ///
 /// For the purpose of performing permission checks, traditional UNIX
@@ -588,7 +594,7 @@ impl<'de> Deserialize<'de> for Capability {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
     use crate::error::Result;

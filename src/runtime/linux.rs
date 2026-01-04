@@ -3,7 +3,16 @@ use crate::error::{oci_error, OciSpecError};
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display, path::PathBuf, vec};
+use alloc::{string::String, string::ToString, vec::Vec};
+use core::fmt::Display;
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
+#[cfg(feature = "std")]
+use std::path::PathBuf;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use strum_macros::{Display as StrumDisplay, EnumString};
 
 #[derive(
@@ -319,7 +328,7 @@ pub struct LinuxDeviceCgroup {
 /// As such, ToString shouldn’t be implemented directly: Display should be implemented instead,
 /// and you get the ToString implementation for free.
 impl Display for LinuxDeviceCgroup {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let major = self
             .major
             .map(|mj| mj.to_string())
@@ -701,7 +710,7 @@ pub struct LinuxInterfacePriority {
 /// As such, ToString shouldn’t be implemented directly: Display should be implemented instead,
 /// and you get the ToString implementation for free.
 impl Display for LinuxInterfacePriority {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Serde serialization never fails since this is
         // a combination of String and enums.
         writeln!(f, "{} {}", self.name, self.priority)
@@ -1672,7 +1681,7 @@ impl Arbitrary for LinuxHugepageLimit {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
 
