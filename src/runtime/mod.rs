@@ -64,6 +64,12 @@ pub(crate) fn path_to_string_lossy(path: &PathBuf) -> Cow<'_, str> {
     Cow::Borrowed(path.as_str())
 }
 
+/// Default version string for OCI spec.
+/// This function is used by serde(default) to ensure consistency with Default::default().
+fn default_version() -> String {
+    String::from("1.0.2-dev")
+}
+
 /// `config.json` file root object.
 #[derive(
     Builder, Clone, Debug, Deserialize, Getters, MutGetters, Setters, PartialEq, Eq, Serialize,
@@ -77,7 +83,7 @@ pub(crate) fn path_to_string_lossy(path: &PathBuf) -> Cow<'_, str> {
 )]
 #[getset(get_mut = "pub", get = "pub", set = "pub")]
 pub struct Spec {
-    #[serde(default, rename = "ociVersion")]
+    #[serde(default = "default_version", rename = "ociVersion")]
     ///  MUST be in SemVer v2.0.0 format and specifies the version of the
     /// Open Container Initiative  Runtime Specification with which
     /// the bundle complies. The Open Container Initiative
