@@ -1,3 +1,6 @@
+> [!NOTE]
+> This repository is a fork. The original is https://github.com/youki-dev/oci-spec-rs
+
 # oci-spec-rs
 
 [![ci](https://github.com/containers/oci-spec-rs/workflows/ci/badge.svg)](https://github.com/containers/oci-spec-rs/actions)
