@@ -1,18 +1,18 @@
 use crate::error::{oci_error, OciSpecError};
 
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
+use alloc::{string::String, string::ToString, vec::Vec};
+use core::fmt::Display;
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
-use alloc::{string::String, string::ToString, vec::Vec};
-use core::fmt::Display;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap as HashMap;
 #[cfg(feature = "std")]
 use std::path::PathBuf;
-#[cfg(not(feature = "std"))]
-use alloc::string::String as PathBuf;
 use strum_macros::{Display as StrumDisplay, EnumString};
 
 #[derive(

@@ -1,12 +1,12 @@
 use crate::error::OciSpecError;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
 use alloc::{string::String, vec::Vec};
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, Setters};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap as HashMap;
 
 #[derive(
     Builder,

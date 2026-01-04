@@ -1,13 +1,13 @@
 use crate::error::OciSpecError;
 use crate::runtime::{path_to_string_lossy, LinuxIdMapping};
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use alloc::{string::String, string::ToString, vec::Vec};
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use std::path::PathBuf;
-#[cfg(not(feature = "std"))]
-use alloc::string::String as PathBuf;
 
 #[derive(
     Builder, Clone, CopyGetters, Debug, Deserialize, Eq, Getters, Setters, PartialEq, Serialize,

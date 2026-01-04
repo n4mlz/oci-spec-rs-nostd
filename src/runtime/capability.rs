@@ -1,3 +1,5 @@
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeSet as HashSet;
 use alloc::string::String;
 use serde::{
     de::{Deserializer, Error},
@@ -5,8 +7,6 @@ use serde::{
 };
 #[cfg(feature = "std")]
 use std::collections::HashSet;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeSet as HashSet;
 
 use strum_macros::{Display, EnumString};
 

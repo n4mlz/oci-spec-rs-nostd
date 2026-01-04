@@ -1,8 +1,8 @@
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
 use alloc::{string::String, vec::Vec};
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap as HashMap;
 
 use crate::{
     error::OciSpecError,

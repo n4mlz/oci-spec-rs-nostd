@@ -1,5 +1,5 @@
 > [!NOTE]
-> This repository is a fork. The original is https://github.com/youki-dev/oci-spec-rs
+> This repository is a fork. The original is <https://github.com/youki-dev/oci-spec-rs>
 
 # oci-spec-rs
 

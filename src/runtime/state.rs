@@ -1,23 +1,24 @@
-use crate::error::OciSpecError;
+use crate::error::{OciSpecError, Result};
 
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use alloc::{string::String, vec::Vec};
 #[cfg(feature = "std")]
 use std::{
     fs,
     io::{BufReader, BufWriter, Write},
     path::{Path, PathBuf},
+    str::FromStr,
 };
-#[cfg(not(feature = "std"))]
-use alloc::string::String as PathBuf;
 
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
+use core::fmt::Display;
 use derive_builder::Builder;
 use getset::{Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
-use core::fmt::Display;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap as HashMap;
 
 /// ContainerState represents the state of a container.
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Deserialize, Serialize)]
@@ -99,26 +100,28 @@ pub struct State {
     annotations: Option<HashMap<String, String>>,
 }
 
-impl State {
-    /// Load a State from the provided JSON string.
-    /// # Errors
-    /// This function will return an [OciSpecError::SerDe] if the JSON is invalid.
-    pub fn from_str(value: &str) -> Result<Self, OciSpecError> {
+#[cfg(feature = "std")]
+impl FromStr for State {
+    type Err = OciSpecError;
+
+    fn from_str(value: &str) -> Result<Self> {
         let state = serde_json::from_str(value)?;
         Ok(state)
     }
+}
 
+impl State {
     /// Serialize a State into a compact JSON string.
     /// # Errors
     /// This function will return an [OciSpecError::SerDe] if the state cannot be serialized.
-    pub fn to_string(&self) -> Result<String, OciSpecError> {
+    pub fn to_string(&self) -> Result<String> {
         Ok(serde_json::to_string(self)?)
     }
 
     /// Serialize a State into a pretty JSON string.
     /// # Errors
     /// This function will return an [OciSpecError::SerDe] if the state cannot be serialized.
-    pub fn to_string_pretty(&self) -> Result<String, OciSpecError> {
+    pub fn to_string_pretty(&self) -> Result<String> {
         Ok(serde_json::to_string_pretty(self)?)
     }
 
@@ -127,7 +130,7 @@ impl State {
     /// This function will return an [OciSpecError::Io] if the file does not exist or an
     /// [OciSpecError::SerDe] if the JSON is invalid.
     #[cfg(feature = "std")]
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, OciSpecError> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         let file = fs::File::open(path)?;
         let reader = BufReader::new(file);
@@ -140,7 +143,7 @@ impl State {
     /// This function will return an [OciSpecError::Io] if a file cannot be created at the provided
     /// path or an [OciSpecError::SerDe] if the state cannot be serialized.
     #[cfg(feature = "std")]
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), OciSpecError> {
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let path = path.as_ref();
         let file = fs::File::create(path)?;
         let mut writer = BufWriter::new(file);

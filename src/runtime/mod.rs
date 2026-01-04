@@ -2,26 +2,28 @@
 //!
 //! [`Spec`] represents the root object from the specification.
 
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use alloc::{borrow::Cow, string::String, vec::Vec};
 use derive_builder::Builder;
 use getset::{Getters, MutGetters, Setters};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
+use std::collections::HashMap;
 #[cfg(feature = "std")]
 use std::{
     fs,
     io::{BufReader, BufWriter, Write},
     path::{Path, PathBuf},
 };
-#[cfg(not(feature = "std"))]
-use alloc::string::String as PathBuf;
-#[cfg(feature = "std")]
-use std::collections::HashMap;
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap as HashMap;
 
-use crate::error::{OciSpecError, Result};
 #[cfg(feature = "std")]
 use crate::error::oci_error;
+use crate::error::{OciSpecError, Result};
+#[cfg(feature = "std")]
+use std::str::FromStr;
 
 mod capability;
 mod features;
@@ -53,7 +55,7 @@ pub use windows::*;
 pub use zos::*;
 
 #[cfg(feature = "std")]
-pub(crate) fn path_to_string_lossy(path: &PathBuf) -> Cow<'_, str> {
+pub(crate) fn path_to_string_lossy(path: &Path) -> Cow<'_, str> {
     path.to_string_lossy()
 }
 
@@ -215,22 +217,17 @@ impl Default for Spec {
     }
 }
 
-impl Spec {
-    /// Load a new `Spec` from the provided JSON string.
-    /// # Errors
-    /// This function will return an [OciSpecError::SerDe] if the spec is invalid.
-    /// # Example
-    /// ```
-    /// use oci_spec::runtime::Spec;
-    ///
-    /// let spec_json = r#"{"ociVersion":"1.0.2"}"#;
-    /// let spec = Spec::from_str(spec_json).unwrap();
-    /// ```
-    pub fn from_str(value: &str) -> Result<Self> {
+#[cfg(feature = "std")]
+impl FromStr for Spec {
+    type Err = OciSpecError;
+
+    fn from_str(value: &str) -> Result<Self> {
         let spec = serde_json::from_str(value)?;
         Ok(spec)
     }
+}
 
+impl Spec {
     /// Serialize a `Spec` into a compact JSON string.
     /// # Errors
     /// This function will return an [OciSpecError::SerDe] if the spec cannot be serialized.

@@ -1,12 +1,12 @@
 use crate::error::OciSpecError;
+#[cfg(not(feature = "std"))]
+use alloc::string::String as PathBuf;
 use alloc::vec::Vec;
 use derive_builder::Builder;
 use getset::{CopyGetters, Getters, Setters};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use std::path::PathBuf;
-#[cfg(not(feature = "std"))]
-use alloc::string::String as PathBuf;
 use strum_macros::Display as StrumDisplay;
 
 #[derive(
