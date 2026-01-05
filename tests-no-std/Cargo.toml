@@ -1,0 +1,23 @@
+[package]
+name = "oci-spec-no-std-test"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "test_minimal"
+path = "src/test_minimal.rs"
+
+[[bin]]
+name = "test_std_simulation"
+path = "src/test_std_simulation.rs"
+
+[dependencies]
+oci-spec = { path = "..", default-features = false, features = ["runtime"] }
+serde_json = { version = "1.0.66", default-features = false, features = ["alloc"] }
+linked_list_allocator = "0.10"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
